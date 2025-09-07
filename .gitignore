@@ -1,0 +1,54 @@
+# Gitignore for Python AI/ML Project
+
+# --- Python Virtual Environment ---
+# Ignore the virtual environment folder
+typographic-gan-env/
+venv/
+env/
+
+# --- Python Cache & Bytecode ---
+# Ignore Python's cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Jupyter Notebook ---
+# Ignore Jupyter's checkpoint files for notebook recovery
+.ipynb_checkpoints/
+
+# --- Data, Models & Output ---
+# Ignore large files. Consider using Git LFS (Large File Storage) for these if they need to be versioned.
+/data/
+/datasets/
+/models/
+/output/
+/generated_images/
+*.csv
+*.h5
+*.hdf5
+*.pkl
+*.joblib
+*.tflite
+*.onnx
+
+# --- IDE & Editor Configuration ---
+# Ignore configuration files from popular editors
+.vscode/
+.idea/
+*.sublime-*
+
+# --- Secrets & Environment Variables ---
+# NEVER commit secrets, API keys, or credentials
+.env
+*.env
+
+# --- Logs ---
+# Ignore log files
+*.log
+logs/
+
+# --- Operating System Files ---
+# Ignore OS-specific metadata files
+.DS_Store
+Thumbs.db
