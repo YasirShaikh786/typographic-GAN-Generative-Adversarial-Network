@@ -2,7 +2,7 @@ import numpy as np
 import os
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, LeakyReLU, Dropout, Reshape, Flatten, BatchNormalization
+from tensorflow.keras.layers import Dense, LeakyReLU, Dropout, Reshape, Flatten, BatchNormalization, Conv2D, Conv2DTranspose
 from tensorflow.keras.optimizers import Adam
 
 class SimpleGlyphGAN:
@@ -39,8 +39,10 @@ class SimpleGlyphGAN:
         self.combined = tf.keras.Model(z, validity)
         self.combined.compile(
             loss='binary_crossentropy',
-            optimizer=Adam(0.0002, 0.5)
+            optimizer=Adam(0.0001, 0.5)
         )
+        self.discriminator.trainable = True
+
     
     def build_generator(self):
         model = Sequential()
@@ -71,11 +73,11 @@ class SimpleGlyphGAN:
         
         model.add(Dense(512))
         model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.3))
+        model.add(Dropout(0.4))
         
         model.add(Dense(256))
         model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.3))
+        model.add(Dropout(0.4))
         
         model.add(Dense(1, activation='sigmoid'))
         
@@ -87,46 +89,66 @@ class SimpleGlyphGAN:
     def train(self, X_train, epochs, batch_size=32, sample_interval=50):
         # Rescale -1 to 1
         X_train = X_train / 127.5 - 1.
-        
+    
         # Adversarial ground truths
         valid = np.ones((batch_size, 1))
         fake = np.zeros((batch_size, 1))
-        
+    
+        # Lists to store losses for plotting
+        d_losses = []
+        g_losses = []
+        d_accs = []
+    
         for epoch in range(epochs):
             # ---------------------
             #  Train Discriminator
             # ---------------------
-            
+        
+            # Make discriminator trainable
+            self.discriminator.trainable = True
+        
             # Select a random batch of images
             idx = np.random.randint(0, X_train.shape[0], batch_size)
             imgs = X_train[idx]
-            
+        
             # Sample noise and generate a batch of new images
             noise = np.random.normal(0, 1, (batch_size, self.latent_dim))
             gen_imgs = self.generator.predict(noise, verbose=0)
-            
+        
             # Train the discriminator (real classified as ones and generated as zeros)
             d_loss_real = self.discriminator.train_on_batch(imgs, valid)
             d_loss_fake = self.discriminator.train_on_batch(gen_imgs, fake)
             d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
-            
+        
             # ---------------------
             #  Train Generator
             # ---------------------
-            
+        
+            # Make discriminator non-trainable when training generator
+            self.discriminator.trainable = False
+        
             # Train the generator (wants discriminator to mistake images as real)
             g_loss = self.combined.train_on_batch(noise, valid)
-            
+        
+            # Store losses for plotting
+            d_losses.append(d_loss[0])
+            g_losses.append(g_loss)
+            d_accs.append(d_loss[1])
+        
             # Print the progress
             if epoch % sample_interval == 0:
                 print(f"{epoch} [D loss: {d_loss[0]:.4f}, acc.: {100*d_loss[1]:.2f}%] [G loss: {g_loss:.4f}]")
-                
-                # Sample images
-                self.sample_images(epoch)
-                
-                # Save models periodically
-                if epoch % 1000 == 0:
-                    self.save_models(epoch)
+            
+            # Sample images
+            self.sample_images(epoch)
+            
+            # Save models periodically
+            if epoch % 1000 == 0:
+                self.save_models(epoch)
+    
+        # Plot training history after training completes
+        from utils import plot_training_history
+        plot_training_history(g_losses, d_losses, d_accs)   
     
     def sample_images(self, epoch):
         r, c = 5, 5
