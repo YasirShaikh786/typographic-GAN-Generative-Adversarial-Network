@@ -162,8 +162,6 @@ class SimpleGlyphGAN:
         from utils import save_images
         save_images(gen_imgs, epoch)
     
-    
-    
     def save_models(self, epoch):
         os.makedirs("models", exist_ok=True)
         self.generator.save(f"models/generator_{epoch}.h5")
